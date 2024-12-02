@@ -12,7 +12,7 @@ for (var line = reader.ReadLine(); line != null; line = reader.ReadLine())
 }
 
 Console.WriteLine(Part1(numberLines));
-// Console.WriteLine(Part2(numberLines));
+Console.WriteLine(Part2(numberLines));
 
 int Part1(int[][] numberLines)
 {
@@ -20,6 +20,21 @@ int Part1(int[][] numberLines)
     foreach (var numbers in numberLines)
     {
         if (IsSafe(numbers))
+        {
+            safeCounter++;
+        }
+    }
+
+    return safeCounter;
+}
+
+int Part2(int[][] numberLines)
+{
+    var safeCounter = 0;
+
+    foreach (var numbers in numberLines)
+    {
+        if (IsSafe(numbers) || WithProblemDampener(numbers))
         {
             safeCounter++;
         }
@@ -42,4 +57,19 @@ bool IsSafe(int[] numbers)
     }
 
     return isAscending || isDescending;
+}
+
+bool WithProblemDampener(int[] numbers)
+{
+    for (var i = 0; i < numbers.Length; i++)
+    {
+        var modifiedNumbers = numbers.Where((_, index) => index != i).ToArray();
+
+        if (IsSafe(modifiedNumbers))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
