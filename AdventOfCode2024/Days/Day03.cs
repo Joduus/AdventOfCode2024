@@ -1,18 +1,28 @@
+using System.Buffers;
 using System.Text.RegularExpressions;
 using AoCHelper;
 
 namespace AdventOfCode2024.Days;
 
-public class Day03 : BaseDay
+public sealed class Day03 : BaseDay
 {
-    private StreamReader InputFileStream => new StreamReader(File.Open(InputFilePath, FileMode.Open));
+    private readonly string _input;
 
-    private static Regex _mulRegex = new(@"mul\((\d+),(\d+)\)", RegexOptions.Compiled | RegexOptions.NonBacktracking | RegexOptions.CultureInvariant);
+    private static Regex _mulRegexSimple = new(@"mul\((\d+),(\d+)\)",
+        RegexOptions.Compiled | RegexOptions.NonBacktracking | RegexOptions.CultureInvariant);
+
+    private static Regex _mulRegexWithInstructions = new(@"(mul(?=\((\d+),(\d+)\))|do(?:n't)?(?=\(\)))",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    public Day03()
+    {
+        var inputFileStream = File.Open(InputFilePath, FileMode.Open);
+        _input = new StreamReader(inputFileStream).ReadToEnd();
+    }
 
     public override ValueTask<string> Solve_1()
     {
-        var input = InputFileStream.ReadToEnd();
-        var mulMatches = _mulRegex.Matches(input);
+        var mulMatches = _mulRegexSimple.Matches(_input);
 
         var mulSum = 0;
         foreach (Match match in mulMatches)
@@ -25,6 +35,30 @@ public class Day03 : BaseDay
 
     public override ValueTask<string> Solve_2()
     {
-        throw new NotImplementedException();
+        var instructionMatches = _mulRegexWithInstructions.Matches(_input);
+
+        var mulSum = 0;
+        var multiplicationAllowed = true;
+        foreach (Match match in instructionMatches)
+        {
+            switch (match.Groups[1].Value)
+            {
+                case "do":
+                    multiplicationAllowed = true;
+                    break;
+                case "don't":
+                    multiplicationAllowed = false;
+                    break;
+                case "mul":
+                    if (multiplicationAllowed)
+                    {
+                        mulSum += Convert.ToInt32(match.Groups[2].Value) * Convert.ToInt32(match.Groups[3].Value);
+                    }
+
+                    break;
+            }
+        }
+
+        return new ValueTask<string>(mulSum.ToString());
     }
 }
