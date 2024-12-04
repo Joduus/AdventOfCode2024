@@ -8,6 +8,18 @@ public sealed class Day04 : BaseDay
 
     private readonly char[][] _input;
 
+    private readonly Dictionary<Direction, (int x, int y)> _directionVectors = new()
+    {
+        { Direction.Up, (0, -1) },
+        { Direction.Down, (0, 1) },
+        { Direction.Left, (-1, 0) },
+        { Direction.Right, (1, 0) },
+        { Direction.UpperRight, (1, -1) },
+        { Direction.LowerRight, (1, 1) },
+        { Direction.LowerLeft, (-1, 1) },
+        { Direction.UpperLeft, (-1, -1) },
+    };
+
     public Day04()
     {
         _input = File.ReadLines(InputFilePath).Select(x => x.ToCharArray()).ToArray();
@@ -62,12 +74,11 @@ public sealed class Day04 : BaseDay
 
     private bool IsXmas(int currentRow, int currentColumn, int rowCount, int columnCount)
     {
-        var hasSpaceUp = currentRow - 1 >= 0;
-        var hasSpaceDown = currentRow + 1 < rowCount;
-        var hasSpaceLeft = currentColumn - 1 >= 0;
-        var hasSpaceRight = currentColumn + 1 < columnCount;
-
-        if (!hasSpaceUp || !hasSpaceDown || !hasSpaceLeft || !hasSpaceRight)
+        if (!CanMoveInDirection(currentRow, currentColumn, Direction.Up, 1)
+            || !CanMoveInDirection(currentRow, currentColumn, Direction.Down, 1)
+            || !CanMoveInDirection(currentRow, currentColumn, Direction.Left, 1)
+            || !CanMoveInDirection(currentRow, currentColumn, Direction.Right, 1)
+           )
         {
             return false;
         }
@@ -83,31 +94,15 @@ public sealed class Day04 : BaseDay
         return upperLeftLowerRightX && upperRightLowerLeftX;
     }
 
-    private int CheckAllDirectionsForWord(ReadOnlySpan<char> word, int currentRow, int currentColumn, int rowCount, int columnCount)
+    private int CheckAllDirectionsForWord(ReadOnlySpan<char> word, int currentRow, int currentColumn, int rowCount,
+        int columnCount)
     {
         var wordLength = word.Length - 1;
-        var hasWordSpaceUp = currentRow - wordLength >= 0;
-        var hasWordSpaceDown = currentRow + wordLength < rowCount;
-        var hasWordSpaceLeft = currentColumn - wordLength >= 0;
-        var hasWordSpaceRight = currentColumn + wordLength < columnCount;
-
-        var directionConditions = new Dictionary<Direction, Func<bool>>
-        {
-            {Direction.Up, () => hasWordSpaceUp},
-            {Direction.Down, () => hasWordSpaceDown},
-            {Direction.Left, () => hasWordSpaceLeft},
-            {Direction.Right, () => hasWordSpaceRight},
-            {Direction.UpperRight, () => hasWordSpaceUp && hasWordSpaceRight},
-            {Direction.LowerRight, () => hasWordSpaceDown && hasWordSpaceRight},
-            {Direction.LowerLeft, () => hasWordSpaceDown && hasWordSpaceLeft},
-            {Direction.UpperLeft, () => hasWordSpaceUp && hasWordSpaceLeft},
-        };
-
         var directionsWithWord = 0;
-
-        foreach (var condition in directionConditions)
+        foreach (var direction in _directionVectors)
         {
-            if (condition.Value() && CheckDirectionForWord(word, currentRow, currentColumn, condition.Key))
+            if (CanMoveInDirection(currentRow, currentColumn, direction.Key, wordLength)
+                && CheckDirectionForWord(word, currentRow, currentColumn, direction.Key))
             {
                 directionsWithWord++;
             }
@@ -116,27 +111,23 @@ public sealed class Day04 : BaseDay
         return directionsWithWord;
     }
 
+    private bool CanMoveInDirection(int currentRow, int currentColumn, Direction direction, int length)
+    {
+        var (x, y) = _directionVectors[direction];
+        var newRow = currentRow + y * length;
+        var newColumn = currentColumn + x * length;
+        return newRow >= 0 && newRow < _input.Length && newColumn >= 0 && newColumn < _input[newRow].Length;
+    }
+
     private bool CheckDirectionForWord(ReadOnlySpan<char> word, int currentRow, int currentColumn,
         Direction directionToCheck)
     {
-        var directionVectors = new Dictionary<Direction, (int row, int column)>
-        {
-            {Direction.Up, (-1, 0)},
-            {Direction.Down, (1, 0)},
-            {Direction.Left, (0, -1)},
-            {Direction.Right, (0, 1)},
-            {Direction.UpperRight, (-1, 1)},
-            {Direction.LowerRight, (1, 1)},
-            {Direction.LowerLeft, (1, -1)},
-            {Direction.UpperLeft, (-1, -1)},
-        };
-
-        var (row, column) = directionVectors[directionToCheck];
+        var (x, y) = _directionVectors[directionToCheck];
         var wordLength = word.Length;
         Span<char> chars = stackalloc char[wordLength];
         for (var i = 0; i < wordLength; i++)
         {
-            chars[i] = _input[currentRow + row * i][currentColumn + column * i];
+            chars[i] = _input[currentRow + y * i][currentColumn + x * i];
         }
 
         return chars.SequenceEqual(word);
