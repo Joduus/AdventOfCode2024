@@ -38,7 +38,49 @@ public sealed class Day04 : BaseDay
 
     public override ValueTask<string> Solve_2()
     {
-        throw new NotImplementedException();
+        var xmasCounter = 0;
+
+        var rowCount = _input.Length;
+        for (var i = 0; i < rowCount; i++)
+        {
+            var columnCount = _input[i].Length;
+            for (var j = 0; j < columnCount; j++)
+            {
+                var currentColumnIsA = _input[i][j] == 'A';
+                if (!currentColumnIsA)
+                {
+                    continue;
+                }
+
+                var xmasCounterTemp = IsXmas(i, j, rowCount, columnCount);
+                xmasCounter += Convert.ToInt32(xmasCounterTemp);
+            }
+        }
+
+        return new ValueTask<string>(xmasCounter.ToString());
+    }
+
+    private bool IsXmas(int currentRow, int currentColumn, int rowCount, int columnCount)
+    {
+        var hasSpaceUp = currentRow - 1 >= 0;
+        var hasSpaceDown = currentRow + 1 < rowCount;
+        var hasSpaceLeft = currentColumn - 1 >= 0;
+        var hasSpaceRight = currentColumn + 1 < columnCount;
+
+        if (!hasSpaceUp || !hasSpaceDown || !hasSpaceLeft || !hasSpaceRight)
+        {
+            return false;
+        }
+
+        var upperLeft = _input[currentRow - 1][currentColumn - 1];
+        var upperRight = _input[currentRow - 1][currentColumn + 1];
+        var lowerLeft = _input[currentRow + 1][currentColumn - 1];
+        var lowerRight = _input[currentRow + 1][currentColumn + 1];
+
+        var upperLeftLowerRightX = (upperLeft == 'M' && lowerRight == 'S') || (upperLeft == 'S' && lowerRight == 'M');
+        var upperRightLowerLeftX = (upperRight == 'M' && lowerLeft == 'S') || (upperRight == 'S' && lowerLeft == 'M');
+
+        return upperLeftLowerRightX && upperRightLowerLeftX;
     }
 
     private int CheckAllDirectionsForWord(ReadOnlySpan<char> word, int currentRow, int currentColumn, int rowCount, int columnCount)
