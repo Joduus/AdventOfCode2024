@@ -27,66 +27,51 @@ public sealed class Day04 : BaseDay
 
     public override ValueTask<string> Solve_1()
     {
-        var xmasCounter = 0;
-
-        var rowCount = _input.Length;
-        for (var i = 0; i < rowCount; i++)
-        {
-            var columnCount = _input[i].Length;
-            for (var j = 0; j < columnCount; j++)
-            {
-                var currentColumnIsX = _input[i][j] == 'X';
-                if (!currentColumnIsX)
-                {
-                    continue;
-                }
-
-                xmasCounter += CheckAllDirectionsForWord(XmasWord, i, j, rowCount, columnCount);
-            }
-        }
+        var xmasCounter = _input.SelectMany((row, currentRow) =>
+                row.Select((columnChar, currentColumn) => (currentRow, currentColumn, columnChar)))
+            .Where(x => x.columnChar == 'X')
+            .Select(x => CheckAllDirectionsForWord(
+                XmasWord,
+                x.currentRow,
+                x.currentColumn,
+                _input.Length,
+                _input[x.currentRow].Length
+            ))
+            .Sum();
 
         return new ValueTask<string>(xmasCounter.ToString());
     }
 
     public override ValueTask<string> Solve_2()
     {
-        var xmasCounter = 0;
-
-        var rowCount = _input.Length;
-        for (var i = 0; i < rowCount; i++)
-        {
-            var columnCount = _input[i].Length;
-            for (var j = 0; j < columnCount; j++)
-            {
-                var currentColumnIsA = _input[i][j] == 'A';
-                if (!currentColumnIsA)
-                {
-                    continue;
-                }
-
-                var xmasCounterTemp = IsXmas(i, j, rowCount, columnCount);
-                xmasCounter += Convert.ToInt32(xmasCounterTemp);
-            }
-        }
+        var xmasCounter = _input.SelectMany((row, currentRow) =>
+                row.Select((columnChar, currentColumn) => (currentRow, currentColumn, columnChar)))
+            .Where(x => x.columnChar == 'A')
+            .Select(x => IsXmas(
+                x.currentRow,
+                x.currentColumn,
+                _input.Length,
+                _input[x.currentRow].Length
+            ))
+            .Count();
 
         return new ValueTask<string>(xmasCounter.ToString());
     }
 
     private bool IsXmas(int currentRow, int currentColumn, int rowCount, int columnCount)
     {
-        if (!CanMoveInDirection(currentRow, currentColumn, Direction.Up, 1)
-            || !CanMoveInDirection(currentRow, currentColumn, Direction.Down, 1)
-            || !CanMoveInDirection(currentRow, currentColumn, Direction.Left, 1)
-            || !CanMoveInDirection(currentRow, currentColumn, Direction.Right, 1)
-           )
+        if (new[] { Direction.Up, Direction.Down, Direction.Left, Direction.Right }
+            .Any(direction => !CanMoveInDirection(currentRow, currentColumn, direction, 1)))
         {
             return false;
         }
 
-        var upperLeft = _input[currentRow - 1][currentColumn - 1];
-        var upperRight = _input[currentRow - 1][currentColumn + 1];
-        var lowerLeft = _input[currentRow + 1][currentColumn - 1];
-        var lowerRight = _input[currentRow + 1][currentColumn + 1];
+        var (upperLeft, upperRight, lowerLeft, lowerRight) = (
+            _input[currentRow - 1][currentColumn - 1],
+            _input[currentRow - 1][currentColumn + 1],
+            _input[currentRow + 1][currentColumn - 1],
+            _input[currentRow + 1][currentColumn + 1]
+        );
 
         var upperLeftLowerRightX = (upperLeft == 'M' && lowerRight == 'S') || (upperLeft == 'S' && lowerRight == 'M');
         var upperRightLowerLeftX = (upperRight == 'M' && lowerLeft == 'S') || (upperRight == 'S' && lowerLeft == 'M');
@@ -124,13 +109,11 @@ public sealed class Day04 : BaseDay
     {
         var (x, y) = _directionVectors[directionToCheck];
         var wordLength = word.Length;
-        Span<char> chars = stackalloc char[wordLength];
-        for (var i = 0; i < wordLength; i++)
-        {
-            chars[i] = _input[currentRow + y * i][currentColumn + x * i];
-        }
 
-        return chars.SequenceEqual(word);
+        return Enumerable.Range(0, wordLength)
+            .Select(i => _input[currentRow + y * i][currentColumn + x * i])
+            .ToArray()
+            .SequenceEqual(word.ToArray());
     }
 }
 
