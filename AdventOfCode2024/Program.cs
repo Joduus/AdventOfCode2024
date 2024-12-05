@@ -12,6 +12,6 @@ else
     }
     else
     {
-        await Solver.Solve(args[1..].Select(s => Convert.ToUInt32(s)).ToArray());
+        await Solver.Solve(args.Select(s => Convert.ToUInt32(s)).ToArray());
     }
 }
